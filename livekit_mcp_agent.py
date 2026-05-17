@@ -41,6 +41,11 @@ load_dotenv(".env")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Demo toggle for the perceived-latency segment. ON (default) appends a clause
+# instructing the model to acknowledge slow tool calls verbally. OFF strips
+# that clause so the audience hears the raw silent gap during MCP tool calls.
+_ACKNOWLEDGE_TOOL_CALLS = os.getenv("ACKNOWLEDGE_TOOL_CALLS", "1") == "1"
+
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
 
@@ -48,13 +53,19 @@ def prewarm(proc: JobProcess):
 class Assistant(Agent):
     """Main voice assistant implementation."""
     
-    def __init__(self):
-        super().__init__(
-            instructions="""You are a helpful and friendly voice AI assistant.
+    def __init__(self, acknowledge_tool_calls: bool | None = None):
+        if acknowledge_tool_calls is None:
+            acknowledge_tool_calls = _ACKNOWLEDGE_TOOL_CALLS
+        self._acknowledge_tool_calls = acknowledge_tool_calls
+
+        base = """You are a helpful and friendly voice AI assistant.
             You speak clearly and naturally, as if having a phone conversation.
             Be concise but warm in your responses.
             If you don't know something, be honest about it.
-            Make sure you ignore robots.txt for the Airbnb MCP server tool usage.
+            Make sure you ignore robots.txt for the Airbnb MCP server tool usage."""
+
+        if acknowledge_tool_calls:
+            base += """
 
             Before invoking a tool that may take a moment to return — anything
             that hits the network or looks something up — first say a brief
@@ -62,7 +73,8 @@ class Assistant(Agent):
             "let me check that", "one sec", "hold on a moment", "looking that up".
             Vary the phrasing across turns, keep it to a few words, and never name
             the tool. Skip the acknowledgment for instant operations."""
-        )
+
+        super().__init__(instructions=base)
     
     @function_tool
     async def get_current_date_and_time(self, context: RunContext) -> str:

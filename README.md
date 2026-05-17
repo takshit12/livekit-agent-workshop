@@ -153,7 +153,44 @@ up the room.
 
 ---
 
-## 8. Run the tests
+## 8. Demo: perceived-latency improvement (A/B)
+
+Voice agents *feel* slow when a tool call leaves the user in silence for
+two or three seconds. The agents in this repo mitigate that two ways:
+
+1. **Prompt-driven** — the model is told to emit a brief natural
+   acknowledgment ("let me check that", "one sec") before slow tool calls.
+   Its filler text gets TTS'd *concurrently* with tool execution, so the
+   perceived gap collapses to ~zero.
+2. **Programmatic backup** — `search_the_web` also fires `session.say(...)`
+   with a varied hold message, as a deterministic safety net for the
+   slowest path.
+
+Both behaviors are gated on the `ACKNOWLEDGE_TOOL_CALLS` environment
+variable so you can A/B them live:
+
+```bash
+# OFF — the audience hears the raw silent gap
+ACKNOWLEDGE_TOOL_CALLS=0 uv run python livekit_inference_agent.py console
+
+# ON (default) — the gap is masked by a natural-sounding acknowledgment
+ACKNOWLEDGE_TOOL_CALLS=1 uv run python livekit_inference_agent.py console
+```
+
+Suggested demo script:
+
+1. Start with `ACKNOWLEDGE_TOOL_CALLS=0`. Ask *"what's the weather in
+   Tokyo today"* — point out the 2-3 second silence while DuckDuckGo runs.
+2. `Ctrl+C`, relaunch with `ACKNOWLEDGE_TOOL_CALLS=1`. Ask the same
+   question — the agent now acknowledges and the gap collapses.
+3. Optional: keep a stopwatch visible on slides for the timing payoff.
+
+The variable defaults to `1`, so attendees who don't touch it get the
+better UX out of the box.
+
+---
+
+## 9. Run the tests
 
 The test suite uses LiveKit's text-mode test harness — no audio, no
 LiveKit room. Each test costs roughly a fraction of a cent in LLM usage.

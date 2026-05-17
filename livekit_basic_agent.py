@@ -32,22 +32,38 @@ _HOLD_MESSAGES_SEARCH = [
 # Load environment variables
 load_dotenv(".env")
 
+# Demo toggle for the "perceived latency" segment of the workshop. When ON
+# (default), the agent both (a) emits a brief natural acknowledgment via its
+# prompt before slow tool calls and (b) plays a hold message via session.say()
+# inside search_the_web. When OFF, both behaviors are suppressed and the
+# audience hears the raw dead-air gap. Flip with `ACKNOWLEDGE_TOOL_CALLS=0`
+# in the environment.
+_ACKNOWLEDGE_TOOL_CALLS = os.getenv("ACKNOWLEDGE_TOOL_CALLS", "1") == "1"
+
 class Assistant(Agent):
     """Basic voice assistant with Airbnb booking capabilities."""
 
-    def __init__(self):
-        super().__init__(
-            instructions=(
-                "You are a helpful and friendly voice assistant. You can: "
-                "(1) search for and book Airbnbs in supported cities — "
-                "San Francisco, New York, and Los Angeles; "
-                "(2) tell the user the current date and time; "
-                "(3) search the live web for current events, recent news, "
-                "or any factual question you don't already know the answer to. "
-                "When the user asks anything that requires fresh information "
-                "from the internet, call `search_the_web` rather than guessing. "
-                "Keep responses concise and natural — you are speaking, not writing. "
-                "Before invoking a tool that may take a moment to return — anything "
+    def __init__(self, acknowledge_tool_calls: bool | None = None):
+        # Resolve the toggle: explicit argument > env var > default-on. Stored
+        # on the instance so search_the_web can also gate its session.say().
+        if acknowledge_tool_calls is None:
+            acknowledge_tool_calls = _ACKNOWLEDGE_TOOL_CALLS
+        self._acknowledge_tool_calls = acknowledge_tool_calls
+
+        base_instructions = (
+            "You are a helpful and friendly voice assistant. You can: "
+            "(1) search for and book Airbnbs in supported cities — "
+            "San Francisco, New York, and Los Angeles; "
+            "(2) tell the user the current date and time; "
+            "(3) search the live web for current events, recent news, "
+            "or any factual question you don't already know the answer to. "
+            "When the user asks anything that requires fresh information "
+            "from the internet, call `search_the_web` rather than guessing. "
+            "Keep responses concise and natural — you are speaking, not writing."
+        )
+        if acknowledge_tool_calls:
+            base_instructions += (
+                " Before invoking a tool that may take a moment to return — anything "
                 "that hits the network, books a reservation, or looks something up — "
                 "first say a brief natural acknowledgment so the user doesn't sit in "
                 "silence. Examples: 'let me check that', 'one sec', 'hold on a moment', "
@@ -55,7 +71,7 @@ class Assistant(Agent):
                 "words, and never name the tool. Skip the acknowledgment for instant "
                 "operations like reading the current time."
             )
-        )
+        super().__init__(instructions=base_instructions)
 
         # Mock Airbnb database
         self.airbnbs = {
@@ -157,11 +173,15 @@ class Assistant(Agent):
         # `allow_interruptions=True` lets the user cancel mid-acknowledgment
         # (e.g. "actually never mind") — the framework will then cancel the
         # in-flight tool and discard the result.
-        context.session.say(
-            random.choice(_HOLD_MESSAGES_SEARCH),
-            allow_interruptions=True,
-            add_to_chat_ctx=False,
-        )
+        #
+        # Gated on _acknowledge_tool_calls so the workshop demo can toggle
+        # this off and let the audience hear the raw silent gap for contrast.
+        if self._acknowledge_tool_calls:
+            context.session.say(
+                random.choice(_HOLD_MESSAGES_SEARCH),
+                allow_interruptions=True,
+                add_to_chat_ctx=False,
+            )
 
         def _ddg_search() -> list[dict]:
             with DDGS() as ddgs:
