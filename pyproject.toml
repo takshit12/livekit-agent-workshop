@@ -1,0 +1,83 @@
+[project]
+name = "livekit-voice-agent"
+version = "0.1.0"
+description = "Voice AI agent built with LiveKit Agents framework"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # >=1.5.2 is required for LiveKit Agent Console to receive the full
+    # RemoteSession event stream (Events / Metrics / Audio panes need this).
+    # Older SDKs run fine but the Cloud Console shows "Version not fully
+    # supported" and empty panes. See https://docs.livekit.io/agents/start/console/
+    "livekit-agents[mcp]>=1.5.2",
+    "livekit-plugins-openai>=1.5.2",
+    "livekit-plugins-deepgram>=1.5.2",
+    "livekit-plugins-silero>=1.5.2",
+    "livekit-plugins-turn-detector>=1.5.2",
+    "python-dotenv>=1.0.0",
+    # Web search via DuckDuckGo — no API key required, free, returns clean
+    # title/body/href triples. Powers the `search_the_web` function tool.
+    "ddgs>=9.0.0",
+]
+
+[project.optional-dependencies]
+# Additional TTS providers
+tts = [
+    "livekit-plugins-cartesia>=1.0.0",
+    "livekit-plugins-elevenlabs>=1.0.0"
+]
+
+# Additional LLM providers
+llm = [
+    "livekit-plugins-anthropic>=1.0.0",
+    "livekit-plugins-google>=1.0.0",
+    "livekit-plugins-groq>=1.0.0",
+]
+
+# Additional STT providers
+stt = [
+    "livekit-plugins-assemblyai>=1.0.0",
+    "livekit-plugins-azure>=1.0.0",
+]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+# All optional dependencies
+all = [
+    "livekit-plugins-cartesia>=1.0.0",
+    "livekit-plugins-elevenlabs>=1.0.0",
+    "livekit-plugins-anthropic>=1.0.0",
+    "livekit-plugins-google>=1.0.0",
+    "livekit-plugins-groq>=1.0.0",
+    "livekit-plugins-assemblyai>=1.0.0",
+    "livekit-plugins-azure>=1.0.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
