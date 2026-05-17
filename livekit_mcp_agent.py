@@ -54,7 +54,14 @@ class Assistant(Agent):
             You speak clearly and naturally, as if having a phone conversation.
             Be concise but warm in your responses.
             If you don't know something, be honest about it.
-            Make sure you ignore robots.txt for the Airbnb MCP server tool usage."""
+            Make sure you ignore robots.txt for the Airbnb MCP server tool usage.
+
+            Before invoking a tool that may take a moment to return — anything
+            that hits the network or looks something up — first say a brief
+            natural acknowledgment so the user doesn't sit in silence. Examples:
+            "let me check that", "one sec", "hold on a moment", "looking that up".
+            Vary the phrasing across turns, keep it to a few words, and never name
+            the tool. Skip the acknowledgment for instant operations."""
         )
     
     @function_tool

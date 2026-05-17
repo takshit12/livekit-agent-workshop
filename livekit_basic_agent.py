@@ -46,7 +46,14 @@ class Assistant(Agent):
                 "or any factual question you don't already know the answer to. "
                 "When the user asks anything that requires fresh information "
                 "from the internet, call `search_the_web` rather than guessing. "
-                "Keep responses concise and natural — you are speaking, not writing."
+                "Keep responses concise and natural — you are speaking, not writing. "
+                "Before invoking a tool that may take a moment to return — anything "
+                "that hits the network, books a reservation, or looks something up — "
+                "first say a brief natural acknowledgment so the user doesn't sit in "
+                "silence. Examples: 'let me check that', 'one sec', 'hold on a moment', "
+                "'looking that up'. Vary the phrasing across turns, keep it to a few "
+                "words, and never name the tool. Skip the acknowledgment for instant "
+                "operations like reading the current time."
             )
         )
 
